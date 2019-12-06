@@ -1,0 +1,40 @@
+server:
+  port: 8002
+
+logging:
+  config: classpath:log4j2.xml
+
+#actuator配置
+management:
+  endpoint:
+    restart:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:  #暴露哪些端点
+        include: "health,httptrace,info,metrics,heapdump,refresh,restart"
+
+spring:
+  application:
+    name: ADMIN
+  boot: #admin不监控consul服务
+    admin:
+      discovery:
+        ignored-services: consul
+  cloud:    #注册中心配置
+    consul:
+      host: 127.0.0.1
+      port: 8500
+      discovery:
+        register: true
+        service-name: ${spring.application.name}
+        prefer-ip-address: true
+        instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}
+        tags: dev
+        health-chcek-path: /actuator/health
+        health-check-critical-timeout: 30s
+        health-check-interval: 15s
+
+

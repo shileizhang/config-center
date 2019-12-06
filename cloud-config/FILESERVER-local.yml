@@ -1,0 +1,69 @@
+server:
+  port: 8003
+
+logging:
+  config: classpath:log4j2.xml
+
+#actuator配置
+management:
+  endpoint:
+    restart:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:  #暴露哪些端点
+        include: "health,httptrace,info,metrics,heapdump,refresh,restart"
+
+spring:
+  application:
+    name: FILESERVER
+  boot: #admin不监控consul服务
+    admin:
+      discovery:
+        ignored-services: consul
+  cloud:    #注册中心配置
+    consul:
+      host: 127.0.0.1
+      port: 8500
+      discovery:
+        register: true
+        service-name: ${spring.application.name}
+        prefer-ip-address: true
+        instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}
+        tags: dev
+        health-chcek-path: /actuator/health
+        health-check-critical-timeout: 30s
+        health-check-interval: 15s
+
+  http:  #http大小限制
+    multipart:
+      max-file-size: 10MB   #文件大小限制
+      max-request-size: 100MB  #请求内容大小限制
+# ===================================================================
+# 分布式文件系统FDFS配置
+# ===================================================================
+fdfs:
+  soTimeout: 1501
+  connectTimeout: 601
+  thumb-image:
+    width: 150
+    height: 150
+  trackerList:
+    - 127.0.0.1:22122
+#    - 185.25.103.20:22122
+#    - 192.168.174.42:22122
+#    - 192.168.174.48:22122
+  pool:
+    #从池中借出的对象的最大数目
+    maxTotal: 153
+    #获取连接时的最大等待毫秒数100
+    maxWaitMillis: 102
+
+#file upload setting
+file:
+  validate:
+    type: jpg,png,zip
+
+

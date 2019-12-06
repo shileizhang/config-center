@@ -1,0 +1,57 @@
+server:
+  port: 8000
+
+logging:
+  config: classpath:log4j2.xml
+
+#actuator配置
+management:
+  endpoint:
+    restart:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:  #暴露哪些端点
+        include: "health,httptrace,info,metrics,heapdump,refresh,restart"
+
+spring:
+  application:
+    name: GATEWAY
+  boot:  #监控中心
+    admin:
+      client:
+        url: ADMIN
+  cloud:    #注册中心
+    consul:
+      host: 127.0.0.1
+      port: 8500
+      discovery:
+        register: true
+        service-name: ${spring.application.name}
+        prefer-ip-address: true
+        instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}
+        tags: dev
+        health-chcek-path: /actuator/health
+        health-check-critical-timeout: 30s
+        health-check-interval: 15s
+    gateway:    #网关配置
+      enable: true
+      routes:
+        - id: route-platform
+          uri: lb://PLATFORM
+          predicates:
+            - Path=/platform/**
+          filters:
+            - RewritePath=/platform/(?<segment>.*),/$\{segment}
+          order: 0
+        - id: route-fileServer
+          uri: lb://FILESERVER
+          predicates:
+            - Path=/fileServer/**
+          filters:
+            - RewritePath=/fileServer/(?<segment>.*),/$\{segment}
+          order: 1
+
+
