@@ -14,7 +14,7 @@ management:
   endpoints:
     web:
       exposure:  #暴露哪些端点
-        include: "health,httptrace,info,metrics,heapdump,refresh,restart"
+        include: "health,httptrace,info,metrics,heapdump,refresh,restart,bus-refresh"
 
 spring:
   application:
