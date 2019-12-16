@@ -108,13 +108,77 @@ spring:
       keepAliveTargetHost:
         www.baidu.com: 5
 
-feign:  #feign底层使用HttpClient 自动配置默认参数
+#Feign的调用分两层，即Ribbon层的调用和Hystrix的调用，高版本的Hystrix默认是关闭的
+feign:  #feign底层使用HttpClient 自动配置默认参数  //参考：FeignHttpClientProperties
   httpclient:
     enabled: true
     maxConnections: 200
     maxConnectionsPerRoute: 50
     connectionTimeout: 2000
     connectionTimerRepeat: 3000
+
+#Ribbon配置
+ribbon:
+  ServerListRefreshInterval: 30000   #每30s执行一次服务列表更新任务 (应用启动后延迟1s执行定时更新服务列表的任务)
+  # 默认相同的route不重试,可以避免一些各种重试引起的问题，简单化(但服务提供方还是应该尽量保证幂等性)
+  MaxAutoRetries: 0
+  # 默认只重试不同route一次
+  MaxAutoRetriesNextServer: 1
+  # 由于在前面feign文档中已经讲到使用自己配置的HttpClient连接池,所以不需要配置ribbon连接池相关的任何属性(因为考虑到每个服务提供方的不同，后期可能会更改回来使用ribbon连接池方式)
+  # 默认5000
+  ReadTimeout: 5000
+  # 默认2000
+  ConnectTimeout: 2000
+  #  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule #配置规则 随机
+  #  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #配置规则 轮询
+  #  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RetryRule #配置规则 重试
+  #  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.WeightedResponseTimeRule #配置规则 响应时间权重
+  NFLoadBalancerRuleClassName: com.netflix.loadbalancer.BestAvailableRule #配置规则 最空闲连接策
+  # 后续可能会自定义一些负载均衡策略,通过这里来设置
+  # ribbon子容器饥饿加载,避免偶尔因为服务重启后第一次发起请求时延迟加载耗时造成fallback,但是会增加系统启动时间(新版才支持)
+  eager-load:
+    enabled: true
+    clients:
+      - a
+      - b
+      - c
+#一个客户端远程多个微服务，可针对单个微服务做特殊配置
+# ribbon客户端名称(即feign客户端名称)
+<clientName>:
+  ribbon:
+    listOfServers: www.baidu.com
+    xxx: xxx
+
+#断路器
+hystrix:
+  command:
+    default:
+      circuitBreaker:
+        # 是否开启熔断(默认true)
+        enabled: true
+        # 熔断生效至少请求数量(默认20),当同一HystrixCommand请求数量低于此值时,熔断不会开启
+        requestVolumeThreshold: 20
+        # 失败次数超过比例才开启熔断
+        errorThresholdPercentage: 50
+        # 强制开启熔断
+        #forceOpen： true
+        # 强制关闭熔断
+        #forceClosed: true
+      execution:
+        isolation:
+          # THREAD:单独开启线程执行;#SEMAPHORE:在调用线程上执行(由于我们现有框架中FeignUserContextInterceptor中使用了ThreadLocal,所以必须使用第二种方式)
+          strategy: SEMAPHORE
+          thread:
+            # 执行超时时间(这个时间设置很重要,因为HystrixCommand会包装RibbonClient实例,那么这个时间就必须要大于ribbion timeout * retry
+            timeoutInMilliseconds: 2000
+          semaphore:
+            # 由于我们使用SEMAPHORE模式,当每个feign并发发起请求超过此值时,请求会被拒绝,直接调用降级方法,异常信息关键字:could not acquire a semaphore for execution
+            maxConcurrentRequests: 1000
+      fallback:
+        isolation:
+          semaphore:
+            # 由于我们使用SEMAPHORE模式，当每个feign并发发起请求调用降级方法超过此值,调用降级方法会被拒绝,直接抛出异常,异常信息关键字:fallback execution rejected
+            maxConcurrentRequests: 1000
 
 #Mybatis配置
 mybatis:
