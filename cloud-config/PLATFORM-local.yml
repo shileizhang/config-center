@@ -108,6 +108,14 @@ spring:
       keepAliveTargetHost:
         www.baidu.com: 5
 
+feign:  #feign底层使用HttpClient 自动配置默认参数
+  httpclient:
+    enabled: true
+    maxConnections: 200
+    maxConnectionsPerRoute: 50
+    connectionTimeout: 2000
+    connectionTimerRepeat: 3000
+
 #Mybatis配置
 mybatis:
   configuration:

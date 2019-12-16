@@ -54,4 +54,11 @@ spring:
             - RewritePath=/fileServer/(?<segment>.*),/$\{segment}
           order: 1
 
+feign:  #feign底层使用HttpClient 自动配置默认参数
+  httpclient:
+    enabled: true
+    maxConnections: 200
+    maxConnectionsPerRoute: 50
+    connectionTimeout: 2000
+    connectionTimerRepeat: 3000
 
