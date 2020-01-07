@@ -190,4 +190,4 @@ mybatis:
   #config-location: classpath:mybatis-config.xml  #全局配置文件位置
 
 neo:
-  hello: hello update xxx1111
+  hello: hello update xxx1111zzz
